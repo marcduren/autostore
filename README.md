@@ -1,4 +1,8 @@
 # autostore
+Autostore is a game similar to Sokoban and Rushhour. 
+You must push the discharged robots to a charging station. You can not push 2 robots at same time and not change their direction
+Why this game? just to put a reference to my CV
+
 
 ## Project setup
 ```
