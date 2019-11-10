@@ -11,18 +11,26 @@
     />
 
     <div class="d-flex">
-      <div class="store" :style="{ width: matrixW, height: matrixH }" style="position:relative;">
-        <template v-for="(R, ind) in store.robots">
-          <img :src="R.imgSrc" class="iRobot" :key="ind" :style="{ left: R.x + 'px', top: R.y + 'px' }" />
-        </template>
-
+      <div class="store" :class="{ edit: editMode }" :style="{ width: matrixW, height: matrixH }" style="position:relative;">
+        <img
+          v-for="(R, ind) in store.robots"
+          :src="R.imgSrc"
+          class="iRobot"
+          :key="ind"
+          :style="{ left: R.x + 'px', top: R.y + 'px' }"
+        />
         <!-- player -->
-        <img :src="store.player.imgSrc" class="iRobot" :style="{ left: store.player.x + 'px', top: store.player.y + 'px' }" />
+        <img
+          v-if="!editMode"
+          :src="store.player.imgSrc"
+          class="iRobot"
+          :style="{ left: store.player.x + 'px', top: store.player.y + 'px' }"
+        />
 
         <div class="d-flex flex-row" v-for="(row, r) in store.cells" :key="r + 1000">
-          <div class="cell" v-for="(cell, c) in row" :key="c + 2000">
+          <div class="cell" v-for="(cell, c) in row" :key="c + 2000" @click="selCell(r, c)">
             <template v-if="cell.in === 'S'">
-              <v-btn fab depressed color="green lighten-2" class="station"><v-icon dark>mdi-power-plug</v-icon></v-btn>
+              <img src="/autostore/power.png" class="station" />
             </template>
           </div>
         </div>
@@ -53,6 +61,18 @@
             <td></td>
           </tr>
         </table>
+
+        <div>
+          <v-checkbox v-model="editMode" label="Edit level"></v-checkbox>
+        </div>
+        <div v-if="editMode">
+          <hr />
+          <v-btn height="100" text><v-img src="/autostore/roboth.png" contain height="80"></v-img></v-btn>
+          <v-btn height="100" text><v-img src="/autostore/robotv.png" contain height="80"></v-img></v-btn>
+          <v-btn height="100" text><v-img src="/autostore/power.png" contain height="80"></v-img></v-btn>
+          <v-btn fab depressed class="ml-3" color=""><v-icon>mdi-checkbox-intermediate</v-icon></v-btn>
+          <v-btn height="100" text class="ml-3" color="red "><v-icon large>mdi-delete-forever</v-icon></v-btn>
+        </div>
       </div>
     </div>
     <!-- .flex -->
@@ -208,12 +228,6 @@ class Store {
     if (this.cells[nRow][nCol].in === '') {
       this.cells[row][col].in = ''
       this.cells[nRow][nCol].in = 'R'
-      /*if (this.blockingTest(nRow, nCol, ['R', 'C'])) {
-        // move back
-        this.cells[row][col].in = 'R'
-        this.cells[nRow][nCol].in = ''
-        return false
-      }*/
       robot.moveTo(nRow, nCol)
       return true
     }
@@ -250,7 +264,7 @@ class Store {
   }
 }
 const nbRobots = 7
-const nbRows = 7
+const nbRows = 8
 const nbCols = 8
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max))
@@ -260,8 +274,11 @@ export default {
   name: 'Game',
   data: () => ({
     store: new Store(nbRows, nbCols, nbRobots),
-    matrixH: nbRows * 71 + 32 + 'px',
-    matrixW: nbCols * 73 + 32 + 'px'
+    matrixH: nbRows * 70 + 32 + 'px',
+    matrixW: nbCols * 70 + 32 + 'px',
+    editMode: false,
+    editRow: null,
+    editCol: null
   }),
   methods: {
     move(hd, vd) {
@@ -272,6 +289,20 @@ export default {
     },
     newGame() {
       this.store.initStore()
+    },
+    selCell(r, c) {
+      this.editRow = r
+      this.editCol = c
+      if (this.editMode) {
+        let cell = this.store.cells[r][c].in
+        if (cell === 'R') {
+          let indRobot = this.store.robots.findIndex(R => {
+            return R.col === c && R.row === r
+          })
+          this.store.robots.splice(indRobot, 1)
+        }
+        this.store.cells[r][c].in = ''
+      }
     }
   },
   created() {
@@ -293,9 +324,20 @@ export default {
   height: 70px;
   border: 2px solid #aaf;
 }
+.edit .cell:hover {
+  background-color: #777;
+  cursor: pointer;
+}
+.edit img {
+  width: 45px;
+}
 .iRobot {
   position: absolute;
   transition: all 0.4s;
+  z-index: 2;
+}
+.edit .iRobot {
+  transition: none 0s;
 }
 .robot,
 .player {
@@ -305,7 +347,7 @@ export default {
 }
 
 .station {
-  margin-left: 6px;
-  margin-top: 6px;
+  margin-left: -1px;
+  margin-top: -1px;
 }
 </style>
