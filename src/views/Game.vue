@@ -1,5 +1,5 @@
 <template >
-  <div class="pa-3" @click="setControlFocus()">
+  <div class="pa-3" >
     <div class="white--text font-weight-bold">{{ store.nbMoves }} Movement<span v-if="store.nbMoves > 1">s</span></div>
     <div class="d-flex flex-wrap">
       <div class="store" :class="{ edit: editMode }" :style="{ width: matrixW, height: matrixH }" style="position:relative;">
@@ -258,7 +258,6 @@ class Store {
       this.robots.forEach(R => {
         if (R.charging) nbOK++
       })
-      console.log(nbOK)
       if (nbOK + 1 == this.nbRobots) this.levelCompleted = true
 
       setTimeout(() => {
@@ -314,9 +313,6 @@ export default {
     move(hd, vd) {
       this.store.movePlayer(hd, vd)
     },
-    setControlFocus() {
-      //this.$refs.controls.focus()
-    },
     random() {
       this.store.randomStore()
     },
@@ -347,7 +343,6 @@ export default {
       if (e.keyCode == 39) this.move(1, 0)
       if (e.keyCode == 38) this.move(0, -1)
       if (e.keyCode == 40) this.move(0, 1)
-      console.log(e.keyCode)
     })
   }
 }
