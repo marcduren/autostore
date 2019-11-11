@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app v-on:keydown.up="alert('up')">
     <v-navigation-drawer v-model="drawer" app clipped>
       <v-list>
         <v-subheader>AUTOSTORE</v-subheader>
@@ -29,6 +29,10 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
+    <v-app-bar app clipped-left flat dense color="indigo">
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-toolbar-title>AutoStore Game</v-toolbar-title>
+    </v-app-bar>
     <v-content>
       <router-view />
     </v-content>
