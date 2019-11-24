@@ -1,5 +1,5 @@
-<template >
-  <div class="pa-3" >
+<template>
+  <div class="pa-3" ref="">
     <div class="white--text font-weight-bold">{{ store.nbMoves }} Movement<span v-if="store.nbMoves > 1">s</span></div>
     <div class="d-flex flex-wrap">
       <div class="store" :class="{ edit: editMode }" :style="{ width: matrixW, height: matrixH }" style="position:relative;">
@@ -27,7 +27,7 @@
         >
         <!-- matrix -->
         <div class="d-flex flex-row" v-for="(row, r) in store.cells" :key="r + 1000">
-          <div class="cell" v-for="(cell, c) in row" :key="c + 2000" @click="selCell(r, c)">
+          <div class="cell" v-for="(cell, c) in row" :key="c + 2000" @click="clearCell(r, c)">
             <template v-if="cell === 'S'">
               <img src="/autostore/power.png" class="station" />
             </template>
@@ -43,15 +43,25 @@
         </div>
       </div>
       <div class="commands">
-        <v-select label="Playing level" v-model="level" :items="levels" @input="newLevel" style="max-width:100px"></v-select>
-        <v-btn @click="newLevel">Replay</v-btn>
-        <!--v-checkbox v-model="editMode" label="Edit level"></v-checkbox--><!-- in development-->
+        <v-select
+          label="Level"
+          v-model="level"
+          :items="levels"
+          item-value="id"
+          item-text="name"
+          @input="newLevel"
+          style="max-width:200px"
+          id="selectLevel"
+        ></v-select>
+        <v-btn @click="replay">Replay</v-btn>
+        <v-checkbox v-model="editMode" label="Edit level"></v-checkbox
+        ><!-- in development-->
         <div v-if="editMode">
           <v-btn color="secondary" @click="random">Random</v-btn>
           <hr />
-          <v-btn height="100" text><v-img src="/autostore/roboth.png" contain height="80"></v-img></v-btn>
-          <v-btn height="100" text><v-img src="/autostore/robotv.png" contain height="80"></v-img></v-btn>
-          <v-btn height="100" text><v-img src="/autostore/power.png" contain height="80"></v-img></v-btn>
+          <v-btn height="100" text @click="addRobotH"><v-img src="/autostore/roboth.png" contain height="80"></v-img></v-btn>
+          <v-btn height="100" text @click="addRobotV"><v-img src="/autostore/robotv.png" contain height="80"></v-img></v-btn>
+          <v-btn height="100" text @click="addPower"><v-img src="/autostore/power.png" contain height="80"></v-img></v-btn>
         </div>
       </div>
     </div>
@@ -80,8 +90,6 @@
         <td></td>
       </tr>
     </table>
-
-    <!-- .flex -->
 
     <p></p>
   </div>
@@ -147,7 +155,7 @@ class Store {
   constructor(level) {
     let defs = levelsdef[level - 1]
     this.level = level
-    this.cells = [] // ''=empty , 'P'=Player, Robot, 'C'=robot Charging, 'S'=charging Station
+    this.cells = [] // ''=empty , 'P'=Player, 'R'=Robot, 'C'=robot Charging, 'S'=charging Station
     this.nbRows = defs.nbRows
     this.nbCols = defs.nbCols
     this.nbRobots = defs.nbRobots
@@ -188,7 +196,7 @@ class Store {
         //20 attempts max
         let r = getRandomInt(this.nbRows - 2) + 1
         let c = getRandomInt(this.nbCols - 2) + 1
-        if (this.cells[r][c] === '' /*&& !this.blockingTest(r, c, ['R', 'C'])*/) {
+        if (this.cells[r][c] === '') {
           // ok empty
           this.cells[r][c] = 'R'
           let orientation = getRandomInt(2)
@@ -201,7 +209,7 @@ class Store {
         //20 attempts max
         let r = getRandomInt(this.nbRows)
         let c = getRandomInt(this.nbCols)
-        if (this.cells[r][c] === '' /*&& !this.blockingTest(r, c, ['R', 'C', 'S'])*/) {
+        if (this.cells[r][c] === '') {
           // ok empty
           this.cells[r][c] = 'S'
           break
@@ -211,21 +219,6 @@ class Store {
 
     //player
     this.newPlayerPos(this.nbRows - 1, 0)
-  }
-  blockingTest(row, col, types) {
-    /** row,col: number, types: array<string> */
-    // return true if cell(row,col) is blocking (not possible) by adjacents
-    let up = ''
-    if (row > 0) up = this.cells[row - 1][col]
-    let down = ''
-    if (row + 1 < this.nbRows) down = this.cells[row + 1][col]
-    let left = ''
-    if (col > 0) left = this.cells[row][col - 1]
-    let right = ''
-    if (col + 1 < this.nbCols) right = this.cells[row][col + 1]
-
-    if (types.includes(up) || types.includes(down) || types.includes(left) || types.includes(right)) return true
-    return false
   }
   moveRobot(hd, vd, row, col) {
     /**move robot at row,col */
@@ -295,11 +288,13 @@ export default {
   name: 'Game',
   data: () => ({
     level: 1,
-    levels: levelsdef.map(L => L.level),
+    levels: levelsdef.map(L => {
+      return { id: L.level, name: L.name }
+    }),
     store: new Store(1),
     editMode: false,
-    editRow: null,
-    editCol: null
+    editRow: 0,
+    editCol: 0
   }),
   computed: {
     matrixH: function() {
@@ -316,10 +311,21 @@ export default {
     random() {
       this.store.randomStore()
     },
-    newLevel() {
-      this.store = new Store(this.level)
+    replay() {
+      if (this.editMode) {
+        this.editMode = false
+      } else {
+        this.store = new Store(this.level)
+      }
     },
-    selCell(r, c) {
+    newLevel() {
+      document.getElementById('selectLevel').blur()
+      this.editMode = false
+      this.editRow = 0
+      this.editCol = 0
+      this.replay()
+    },
+    clearCell(r, c) {
       this.editRow = r
       this.editCol = c
       if (this.editMode) {
@@ -334,6 +340,23 @@ export default {
         tb[r][c] = ''
         this.store.cells = tb //vuejs Reactivity
       }
+    },
+    addRobotH() {
+      let tb = this.store.cells.slice()
+      tb[this.editRow][this.editCol] = 'R'
+      this.store.robots.push(new Robot(this.editRow, this.editCol, 'H'))
+      this.store.cells = tb //vuejs Reactivity
+    },
+    addRobotV() {
+      let tb = this.store.cells.slice()
+      tb[this.editRow][this.editCol] = 'R'
+      this.store.robots.push(new Robot(this.editRow, this.editCol, 'V'))
+      this.store.cells = tb //vuejs Reactivity
+    },
+    addPower() {
+      let tb = this.store.cells.slice()
+      tb[this.editRow][this.editCol] = 'S'
+      this.store.cells = tb //vuejs Reactivity
     }
   },
   created() {},
